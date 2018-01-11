@@ -9,14 +9,21 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import android.support.v4.app.ActivityCompat
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.net.Uri
 import android.support.v4.content.ContextCompat
 import android.os.Build
+import android.os.Environment
+import android.os.Handler
 import org.jetbrains.anko.toast
+import java.io.IOException
+import java.lang.Thread.sleep
 
 
 open class MainActivity : AppCompatActivity() {
 
     val NUMBER_OF_REQUEST = 23401
+    private var startPathName: String = "/sdcard/"
     private var pathName: String = "/sdcard/"
     val adapter = MyAdapter{ clickListener(it) }
 
@@ -56,7 +63,6 @@ open class MainActivity : AppCompatActivity() {
 
     }
 
-    var fullPathName: String = ""
     private val listMusicExtension =  arrayOf("mp3", "flac", "la", "ogg","wav")
     var listFiles: ArrayList<FileClass> = ArrayList()
 
@@ -66,6 +72,7 @@ open class MainActivity : AppCompatActivity() {
         val file = File(pathName)
         val tag = "My tag"
         if(!file.isFile) {
+            setTitle(file.name)
             Log.d(tag, pathName)
             val f: Array<File> = file.listFiles()
             var isFolder: Boolean
@@ -73,14 +80,13 @@ open class MainActivity : AppCompatActivity() {
                 isFolder = !x.isFile
 
                 if (x.name[0] != '.') {
-//                        listFiles.add(FileClass(x.name, isFolder))
                     if (isFolder || listMusicExtension.indexOf(x.extension) != -1) listFiles.add(FileClass(x.name, isFolder))
-//                        else if (listMusicExtension.indexOf(x.extension) != -1) listFiles.add(FileClass(x.name, isFolder))
                 }
             }
         } else {
+            Log.d(tag, "${file.absolutePath}+++")
+            Log.d(tag, file.canonicalPath)
             toast("Вы выбрали: ${getNameElements(pathName)}")
-//                Toast.makeText(this, getNameElements(fullPathName), Toast.LENGTH_LONG).show()
         }
         return listFiles
     }
@@ -92,11 +98,16 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        Log.d(TAG, pathName)
-        val position: Int = pathName.lastIndexOf('/', pathName.length - 2)
-        pathName = pathName.substring(0, position + 1)
-        Log.d(TAG, pathName)
-        adapter.setListElements(showFolder(pathName))
+        if(!pathName.equals(startPathName)) {
+            Log.d(TAG, pathName)
+            val position: Int = pathName.lastIndexOf('/', pathName.length - 2)
+            pathName = pathName.substring(0, position + 1)
+            Log.d(TAG, pathName)
+            adapter.setListElements(showFolder(pathName))
+        } else {
+            super.onBackPressed()
+            finish()
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
